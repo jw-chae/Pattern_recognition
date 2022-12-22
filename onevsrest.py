@@ -4,20 +4,16 @@ import pandas as pd
 from sklearn.metrics import *
 import matplotlib.pyplot as plt
 import seaborn as sns
-import statsmodels.api as sm  # for finding the p-value 
 from sklearn.preprocessing import MinMaxScaler  # for normalization
 from sklearn.preprocessing import StandardScaler
-
 from sklearn.model_selection import train_test_split # to split our data into train and test samples.
-#If you want to see how to implement  this split from scratch you can check out my other project Glass Classification using KNN from Scratch in my profile.
-
 from sklearn.metrics import accuracy_score # for calculating our accuracy in the end 
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 
 class SVM:
 
-    def __init__(self, learning_rate=0.001, lambda_param=0.01, n_iters=1000):
+    def __init__(self, learning_rate=0.001, lambda_param=1, n_iters=100):
         self.lr = learning_rate
         self.lambda_param = lambda_param
         self.n_iters = n_iters
@@ -99,40 +95,68 @@ class OneVsRestSVM:
     def evaluate(self, y_test):
         print('Accuacy : {: .5f}'.format(accuracy_score(y_test, self.y_pred)))
 
-import seaborn as sns
-iris =  sns.load_dataset('iris') 
-X= iris.iloc[:,:4] #학습할데이터
-y = iris.iloc[:,-1] #타겟
+def pca(X, num_components):
+    # Mean center the data
+    X_mean = X - np.mean(X, axis=0)
 
-#X = X.to_numpy()
-#y= y.to_numpy()
-# X = pd.read_csv('codes/train_data.csv')
-# y = pd.read_csv('codes/label_data.csv')
-X = pd.read_csv('./data_for_student\\train\\data.csv')
-y = pd.read_csv('./data_for_student\\train\\label.csv')
+    # Calculate the covariance matrix
+    cov = np.cov(X_mean, rowvar=False)
 
-X = X.transpose()
-index = [i for i in range (len(X))]
-X.index = index
+    # Calculate the eigenvalues and eigenvectors of the covariance matrix
+    eigenvalues, eigenvectors = np.linalg.eig(cov)
 
-y=y.transpose()
-vector = np.vectorize(np.int_)
-y_data = y.index.values.astype(float)
-y_data = vector((y_data))
-y = pd.Series(y_data)
+    # Sort the eigenvalues and eigenvectors in descending order
+    idx = eigenvalues.argsort()[::-1]
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:,idx]
+
+    # Take the top `num_components` eigenvectors
+    W = eigenvectors[:, :num_components]
+
+    # Project the data onto the new subspace
+    X_pca = np.dot(X_mean, W)
+
+    return X_pca
 
 
-print(X.shape,'\n',y.shape)
+if __name__ == "__main__":
+    # iris =  pd.read_csv('./dataset/iris.data')
+    # X= iris.iloc[:,:4] #학습할데이터
+    # y = iris.iloc[:,-1] #타겟
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=48)
-scaler = StandardScaler() #scaling
-X_train = scaler.fit_transform(X_train)#train data로 학습된 Scaler()의 parameter를 통해 test data의 feature 값들이 스케일 되는 것
-X_test = scaler.transform(X_test)#train data로부터 학습된 mean값과 variance값을 test data에 적용하기 위해 transform() 메서드를 사용합니다
+    #X = X.to_numpy()
+    #y= y.to_numpy()
+    # X = pd.read_csv('codes/train_data.csv')
+    # y = pd.read_csv('codes/label_data.csv')
+    X = pd.read_csv('./data_for_student\\train\\data.csv')
+    y = pd.read_csv('./data_for_student\\train\\label.csv')
 
-onevsrest = OneVsRestSVM()
-onevsrest.fit(X_train, y_train)
-y_pred_rest = onevsrest.predict(X_test)
-onevsrest.evaluate(y_test)
+    X = X.transpose()
+    index = [i for i in range (len(X))]
+    X.index = index
+
+    y=y.transpose()
+    vector = np.vectorize(np.int_)
+    y_data = y.index.values.astype(float)
+    y_data = vector((y_data))
+    y = pd.Series(y_data)
+
+    
+
+    print(X.shape,'\n',y.shape)
+    X = X.to_numpy()
+    _X = pca_compoments = pca(X,600)
+    print("After apply pca method:",_X)
+    _X =pd.DataFrame(_X)
+    X_train, X_test, y_train, y_test = train_test_split(_X, y, test_size=0.2, random_state=48)
+    scaler = StandardScaler() #scaling
+    X_train = scaler.fit_transform(X_train)#train data로 학습된 Scaler()의 parameter를 통해 test data의 feature 값들이 스케일 되는 것
+    X_test = scaler.transform(X_test)#train data로부터 학습된 mean값과 variance값을 test data에 적용하기 위해 transform() 메서드를 사용합니다
+
+    onevsrest = OneVsRestSVM()
+    onevsrest.fit(X_train, y_train)
+    y_pred_rest = onevsrest.predict(X_test)
+    onevsrest.evaluate(y_test)
 
 
 

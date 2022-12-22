@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import pandas as pd
 
 """
 algorithm logic
@@ -24,6 +24,28 @@ this algorithm will implement mathematical logic following step
 def euclidean_distance(x1, x2):
     return np.sqrt(np.sum((x1-x2)**2))
 
+def pca(X, num_components):
+  # Mean center the data
+  X_mean = X - np.mean(X, axis=0)
+
+  # Calculate the covariance matrix
+  cov = np.cov(X_mean, rowvar=False)
+
+  # Calculate the eigenvalues and eigenvectors of the covariance matrix
+  eigenvalues, eigenvectors = np.linalg.eig(cov)
+
+  # Sort the eigenvalues and eigenvectors in descending order
+  idx = eigenvalues.argsort()[::-1]
+  eigenvalues = eigenvalues[idx]
+  eigenvectors = eigenvectors[:,idx]
+
+  # Take the top `num_components` eigenvectors
+  W = eigenvectors[:, :num_components]
+
+  # Project the data onto the new subspace
+  X_pca = np.dot(X_mean, W)
+
+  return X_pca
 class KMeans:
 
     def __init__(self, K=3, max_iters=100, plot_steps=False):
@@ -76,7 +98,7 @@ class KMeans:
         # return self.centroids
 
 
-        print (self.centroids)
+        #print (self.centroids)
 
         # optimize clusters
         for _ in range(20):
@@ -89,7 +111,7 @@ class KMeans:
             # calculate new centroids from the clusters
             centroids_old = self.centroids
             self.centroids = self._get_centroids(self.clusters)
-            print (self.centroids)
+            #print (self.centroids)
 
             if self._is_converged(centroids_old, self.centroids):
                 break
@@ -178,20 +200,39 @@ class KMeans:
 
 # Testing
 if __name__ == "__main__":
-    np.random.seed(42)
-    from sklearn.datasets import make_blobs
+    # np.random.seed(42)
+    # from sklearn.datasets import make_blobs
 
-    X, y = make_blobs(
-        centers=3, n_samples=500, n_features=2, shuffle=True, random_state=42
-    )
-    print(X.shape)
+    # X, y = make_blobs(
+    #     centers=3, n_samples=500, n_features=2, shuffle=True, random_state=42
+    # )
+    # print(X.shape)
 
+    # clusters = len(np.unique(y))
+    # print(clusters)
+    X = pd.read_csv('.\\data_for_student\\train\\data.csv')
+    y = pd.read_csv('.\\data_for_student\\train\\data.csv')
+
+    X = X.transpose()
+    index = [i for i in range (len(X))]
+    X.index = index
+
+    y=y.transpose()
+    vector = np.vectorize(np.int_)
+    y_data = y.index.values.astype(float)
+    y_data = vector((y_data))
+    y = pd.Series(y_data)
+
+    X = X.to_numpy()
+    y= y.to_numpy()
+    _X = pca_compoments = pca(X,3)
+    _X = _X[:,:2]
     clusters = len(np.unique(y))
-    print(clusters)
 
+    print(_X.shape,'\n',y.shape)
     k = KMeans(K=clusters, max_iters=150, plot_steps=False)
-    k.predict(X)
-    # y_pred = k.centroids
-    # y_pred = k._get_cluster_labels()
+    k.predict(_X)
+    y_pred = k.centroids
+    y_pred = k._get_cluster_labels(clusters)
     k.plot()
 
